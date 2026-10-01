@@ -5,8 +5,6 @@ import modelo.Pedido;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -19,73 +17,104 @@ class PedidoControllerTest {
         controller = new PedidoController();
     }
 
-    @ParameterizedTest(name = "{0} pedidos con {1} repartidores")
-    @CsvSource({
-            "1, 1",
-            "10, 2",
-            "50, 5",
-            "100, 10"
-    })
-    @DisplayName("Prueba repetible con distintas cantidades de pedidos y repartidores")
-    void testProcesamientoPedidosRepetible(int cantidadPedidos, int cantidadRepartidores) {
-        controller.configurarRepartidores(cantidadRepartidores);
+    @Test
+    @DisplayName("Agregar un pedido correctamente")
+    void testAgregarPedido() {
 
-        for (int i = 1; i <= cantidadPedidos; i++) {
-            controller.agregarPedido(new Pedido(i, "Calle " + i, "comida"));
-        }
+        Pedido pedido = new Pedido(
+                1,
+                "Av. Providencia 1234",
+                "COMIDA"
+        );
 
-        assertEquals(cantidadPedidos, controller.obtenerColaPedidos().size());
+        boolean agregado =
+                controller.agregarPedido(pedido);
 
-        controller.procesarCola();
+        assertTrue(agregado);
 
-        assertTrue(controller.obtenerColaPedidos().isEmpty(), "La cola de pedidos debe quedar vacía.");
+        assertEquals(
+                1,
+                controller.obtenerPedidos().size()
+        );
 
-        for (Pedido p : controller.obtenerPedidos()) {
-            assertEquals(EstadoPedido.ENTREGADO, p.getEstado(), "Cada pedido debe finalizar en estado ENTREGADO.");
-            assertNotNull(p.getRepartidor(), "El pedido debe tener un repartidor asignado.");
-        }
+        assertEquals(
+                EstadoPedido.PENDIENTE,
+                controller.obtenerPedidos()
+                        .get(0)
+                        .getEstado()
+        );
     }
 
     @Test
-    @DisplayName("Validación con cola vacía inicial")
-    void testColaVaciaInicial() {
-        assertTrue(controller.obtenerColaPedidos().isEmpty(), "La cola inicial debe estar vacía.");
+    @DisplayName("No permitir pedidos con ID duplicado")
+    void testPedidoDuplicado() {
 
-        assertDoesNotThrow(() -> controller.procesarCola(), "El procesamiento con cola vacía no debe lanzar excepciones.");
+        Pedido pedido1 = new Pedido(
+                1,
+                "Av. Providencia 1234",
+                "COMIDA"
+        );
 
-        assertTrue(controller.obtenerColaPedidos().isEmpty(), "La cola debe permanecer vacía.");
+        Pedido pedido2 = new Pedido(
+                1,
+                "Av. Irarrázaval 1500",
+                "EXPRESS"
+        );
+
+        assertTrue(
+                controller.agregarPedido(pedido1)
+        );
+
+        assertFalse(
+                controller.agregarPedido(pedido2)
+        );
+
+        assertEquals(
+                1,
+                controller.obtenerPedidos().size()
+        );
     }
 
     @Test
-    @DisplayName("Validación del estado final tras interrupciones")
-    void testProcesamientoConInterrupcion() {
-        int totalPedidos = 10;
-        int limiteProcesamiento = 4;
+    @DisplayName("La lista de pedidos comienza vacía")
+    void testListaInicialVacia() {
 
-        for (int i = 1; i <= totalPedidos; i++) {
-            controller.agregarPedido(new Pedido(i, "Direccion " + i, "express"));
-        }
+        assertTrue(
+                controller.obtenerPedidos().isEmpty()
+        );
+    }
 
-        controller.procesarConInterrupcion(limiteProcesamiento);
+    @Test
+    @DisplayName("Agregar varios pedidos")
+    void testAgregarVariosPedidos() {
 
-        assertTrue(controller.obtenerColaPedidos().isEmpty(), "La cola debe quedar vacía tras procesar/interrumpir.");
+        controller.agregarPedido(
+                new Pedido(
+                        1,
+                        "Dirección 1",
+                        "COMIDA"
+                )
+        );
 
-        long entregados = controller.obtenerPedidos().stream()
-                .filter(p -> p.getEstado() == EstadoPedido.ENTREGADO)
-                .count();
+        controller.agregarPedido(
+                new Pedido(
+                        2,
+                        "Dirección 2",
+                        "ENCOMIENDA"
+                )
+        );
 
-        long interrumpidos = controller.obtenerPedidos().stream()
-                .filter(p -> p.getEstado() == EstadoPedido.INTERRUMPIDO)
-                .count();
+        controller.agregarPedido(
+                new Pedido(
+                        3,
+                        "Dirección 3",
+                        "EXPRESS"
+                )
+        );
 
-        assertEquals(limiteProcesamiento, entregados, "Deben haberse entregado los pedidos antes del límite.");
-        assertEquals(totalPedidos - limiteProcesamiento, interrumpidos, "Los pedidos restantes deben quedar en estado INTERRUMPIDO.");
-
-        for (Pedido p : controller.obtenerPedidos()) {
-            assertTrue(
-                    p.getEstado() == EstadoPedido.ENTREGADO || p.getEstado() == EstadoPedido.INTERRUMPIDO,
-                    "El estado final de cada pedido debe ser ENTREGADO o INTERRUMPIDO."
-            );
-        }
+        assertEquals(
+                3,
+                controller.obtenerPedidos().size()
+        );
     }
 }

@@ -67,10 +67,6 @@ public class Pedido {
         this.estado = EstadoPedido.ENTREGADO;
     }
 
-    public void interrumpir() {
-        this.estado = EstadoPedido.INTERRUMPIDO;
-    }
-
     @Override
     public String toString() {
 
