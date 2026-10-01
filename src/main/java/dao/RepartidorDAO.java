@@ -11,61 +11,86 @@ import java.util.List;
 
 public class RepartidorDAO {
 
+    // CREATE
+    public boolean guardar(Repartidor repartidor) {
+
+        String sql = "INSERT INTO repartidores (nombre) VALUES (?)";
+
+        try (Connection conexion = ConexionBD.conectar();
+             PreparedStatement ps = conexion.prepareStatement(sql)) {
+
+            ps.setString(1, repartidor.getNombre());
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.out.println("Error al guardar repartidor: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // READ
     public List<Repartidor> listarTodos() {
 
         List<Repartidor> repartidores = new ArrayList<>();
 
-        String sql = "SELECT id, nombre FROM repartidor";
+        String sql = "SELECT id, nombre FROM repartidores";
 
-        Connection conexion = null;
-        PreparedStatement statement = null;
-        ResultSet resultado = null;
+        try (Connection conexion = ConexionBD.conectar();
+             PreparedStatement ps = conexion.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-        try {
-            conexion = ConexionBD.conectar();
+            while (rs.next()) {
 
-            statement = conexion.prepareStatement(sql);
-
-            resultado = statement.executeQuery();
-
-            while (resultado.next()) {
-
-                int id = resultado.getInt("id");
-                String nombre = resultado.getString("nombre");
-
-                Repartidor repartidor =
-                        new Repartidor(id, nombre);
+                Repartidor repartidor = new Repartidor(
+                        rs.getInt("id"),
+                        rs.getString("nombre")
+                );
 
                 repartidores.add(repartidor);
             }
 
         } catch (SQLException e) {
-
-            System.out.println("Error al listar los repartidores.");
-            System.out.println(e.getMessage());
-
-        } finally {
-
-            try {
-
-                if (resultado != null) {
-                    resultado.close();
-                }
-
-                if (statement != null) {
-                    statement.close();
-                }
-
-                if (conexion != null) {
-                    conexion.close();
-                }
-
-            } catch (SQLException e) {
-                System.out.println("Error al cerrar los recursos.");
-                System.out.println(e.getMessage());
-            }
+            System.out.println("Error al listar repartidores: " + e.getMessage());
         }
 
         return repartidores;
+    }
+
+    // UPDATE
+    public boolean actualizar(Repartidor repartidor) {
+
+        String sql = "UPDATE repartidores SET nombre = ? WHERE id = ?";
+
+        try (Connection conexion = ConexionBD.conectar();
+             PreparedStatement ps = conexion.prepareStatement(sql)) {
+
+            ps.setString(1, repartidor.getNombre());
+            ps.setInt(2, repartidor.getId());
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.out.println("Error al actualizar repartidor: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // DELETE
+    public boolean eliminar(int id) {
+
+        String sql = "DELETE FROM repartidores WHERE id = ?";
+
+        try (Connection conexion = ConexionBD.conectar();
+             PreparedStatement ps = conexion.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.out.println("Error al eliminar repartidor: " + e.getMessage());
+            return false;
+        }
     }
 }
