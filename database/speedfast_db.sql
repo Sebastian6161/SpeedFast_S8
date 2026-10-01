@@ -5,6 +5,18 @@
 
 CREATE DATABASE IF NOT EXISTS speedfast_db;
 
+-- =====================================================
+-- USUARIO DE LA APLICACIÓN
+-- =====================================================
+
+CREATE USER IF NOT EXISTS 'speedfast_user'@'localhost'
+IDENTIFIED BY 'SpeedFast2026';
+
+GRANT ALL PRIVILEGES ON speedfast_db.*
+TO 'speedfast_user'@'localhost';
+
+FLUSH PRIVILEGES;
+
 USE speedfast_db;
 
 -- =====================================================
