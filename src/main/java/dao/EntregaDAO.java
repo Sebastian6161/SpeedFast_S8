@@ -1,78 +1,151 @@
 package dao;
 
 import modelo.Entrega;
+import modelo.Pedido;
+import modelo.Repartidor;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class EntregaDAO {
 
+    // CREATE
     public boolean guardar(Entrega entrega) {
 
-        String sql =
-                "INSERT INTO entrega " +
-                        "(id_pedido, id_repartidor, fecha, hora) " +
-                        "VALUES (?, ?, ?, ?)";
+        String sql = """
+                INSERT INTO entregas
+                (id_pedido, id_repartidor, fecha, hora)
+                VALUES (?, ?, ?, ?)
+                """;
 
-        Connection conexion = null;
-        PreparedStatement statement = null;
+        try (Connection conexion = ConexionBD.conectar();
+             PreparedStatement ps = conexion.prepareStatement(sql)) {
 
-        try {
+            ps.setInt(1, entrega.getPedido().getId());
+            ps.setInt(2, entrega.getRepartidor().getId());
+            ps.setDate(3, java.sql.Date.valueOf(entrega.getFecha()));
+            ps.setTime(4, java.sql.Time.valueOf(entrega.getHora()));
 
-            conexion = ConexionBD.conectar();
-
-            statement = conexion.prepareStatement(sql);
-
-            statement.setInt(
-                    1,
-                    entrega.getPedido().getId()
-            );
-
-            statement.setInt(
-                    2,
-                    entrega.getRepartidor().getId()
-            );
-
-            statement.setDate(
-                    3,
-                    Date.valueOf(entrega.getFecha())
-            );
-
-            statement.setTime(
-                    4,
-                    Time.valueOf(entrega.getHora())
-            );
-
-            statement.executeUpdate();
-
-            return true;
+            return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
-
-            System.out.println("Error al guardar la entrega.");
-            System.out.println(e.getMessage());
-
+            System.out.println(
+                    "Error al guardar entrega: " + e.getMessage()
+            );
             return false;
+        }
+    }
 
-        } finally {
+    // READ
+    public List<Entrega> listarTodos() {
 
-            try {
+        List<Entrega> entregas = new ArrayList<>();
 
-                if (statement != null) {
-                    statement.close();
-                }
+        String sql = """
+                SELECT e.id,
+                       e.fecha,
+                       e.hora,
+                       p.id AS pedido_id,
+                       p.direccion,
+                       p.tipo,
+                       r.id AS repartidor_id,
+                       r.nombre
+                FROM entregas e
+                INNER JOIN pedidos p
+                    ON e.id_pedido = p.id
+                INNER JOIN repartidores r
+                    ON e.id_repartidor = r.id
+                """;
 
-                if (conexion != null) {
-                    conexion.close();
-                }
+        try (Connection conexion = ConexionBD.conectar();
+             PreparedStatement ps = conexion.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-            } catch (SQLException e) {
+            while (rs.next()) {
 
-                System.out.println(
-                        "Error al cerrar los recursos."
+                Pedido pedido = new Pedido(
+                        rs.getInt("pedido_id"),
+                        rs.getString("direccion"),
+                        rs.getString("tipo")
                 );
 
-                System.out.println(e.getMessage());
+                Repartidor repartidor = new Repartidor(
+                        rs.getInt("repartidor_id"),
+                        rs.getString("nombre")
+                );
+
+                Entrega entrega = new Entrega(
+                        rs.getInt("id"),
+                        pedido,
+                        repartidor,
+                        rs.getDate("fecha").toLocalDate(),
+                        rs.getTime("hora").toLocalTime()
+                );
+
+                entregas.add(entrega);
             }
+
+        } catch (SQLException e) {
+            System.out.println(
+                    "Error al listar entregas: " + e.getMessage()
+            );
+        }
+
+        return entregas;
+    }
+
+    // UPDATE
+    public boolean actualizar(Entrega entrega) {
+
+        String sql = """
+                UPDATE entregas
+                SET id_pedido = ?,
+                    id_repartidor = ?,
+                    fecha = ?,
+                    hora = ?
+                WHERE id = ?
+                """;
+
+        try (Connection conexion = ConexionBD.conectar();
+             PreparedStatement ps = conexion.prepareStatement(sql)) {
+
+            ps.setInt(1, entrega.getPedido().getId());
+            ps.setInt(2, entrega.getRepartidor().getId());
+            ps.setDate(3, java.sql.Date.valueOf(entrega.getFecha()));
+            ps.setTime(4, java.sql.Time.valueOf(entrega.getHora()));
+            ps.setInt(5, entrega.getId());
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.out.println(
+                    "Error al actualizar entrega: " + e.getMessage()
+            );
+            return false;
+        }
+    }
+
+    // DELETE
+    public boolean eliminar(int id) {
+
+        String sql = "DELETE FROM entregas WHERE id = ?";
+
+        try (Connection conexion = ConexionBD.conectar();
+             PreparedStatement ps = conexion.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.out.println(
+                    "Error al eliminar entrega: " + e.getMessage()
+            );
+            return false;
         }
     }
 }
