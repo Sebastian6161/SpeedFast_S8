@@ -12,7 +12,6 @@ public class VentanaRegistroPedido extends JFrame {
     private PedidoController pedidoController;
     private PedidoDAO pedidoDAO;
 
-    private JTextField campoId;
     private JTextField campoDireccion;
     private JComboBox<String> comboTipo;
 
@@ -24,38 +23,36 @@ public class VentanaRegistroPedido extends JFrame {
         this.pedidoDAO = new PedidoDAO();
 
         setTitle("Registrar Pedido");
-        setSize(450, 280);
+        setSize(450, 230);
         setDefaultCloseOperation(
                 JFrame.DISPOSE_ON_CLOSE
         );
         setLocationRelativeTo(null);
 
         setLayout(
-                new GridLayout(4, 2, 10, 10)
+                new GridLayout(3, 2, 10, 10)
         );
 
-        add(new JLabel("ID:"));
-
-        campoId = new JTextField();
-        add(campoId);
-
+        // Dirección
         add(new JLabel("Dirección:"));
 
         campoDireccion = new JTextField();
         add(campoDireccion);
 
+        // Tipo
         add(new JLabel("Tipo:"));
 
         comboTipo = new JComboBox<>(
                 new String[]{
-                        "comida",
-                        "encomienda",
-                        "express"
+                        "COMIDA",
+                        "ENCOMIENDA",
+                        "EXPRESS"
                 }
         );
 
         add(comboTipo);
 
+        // Botón guardar
         JButton botonGuardar =
                 new JButton("Guardar Pedido");
 
@@ -69,64 +66,39 @@ public class VentanaRegistroPedido extends JFrame {
 
     private void guardarPedido() {
 
-        String idTexto =
-                campoId.getText().trim();
-
         String direccion =
                 campoDireccion.getText().trim();
 
         String tipo =
                 (String) comboTipo.getSelectedItem();
 
-        if (idTexto.isEmpty()
-                || direccion.isEmpty()) {
+        // Validación
+        if (direccion.isEmpty()) {
 
             JOptionPane.showMessageDialog(
                     this,
-                    "Complete todos los campos."
+                    "Debe ingresar una dirección.",
+                    "Validación",
+                    JOptionPane.WARNING_MESSAGE
             );
 
+            campoDireccion.requestFocus();
             return;
         }
 
-        int id;
-
-        try {
-
-            id = Integer.parseInt(idTexto);
-
-        } catch (NumberFormatException e) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "El ID debe ser un número."
-            );
-
-            return;
-        }
-
-        if (id <= 0) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "El ID debe ser mayor que cero."
-            );
-
-            return;
-        }
-
+        /*
+         * El ID se envía como 0 solamente para crear
+         * el objeto Java.
+         *
+         * MySQL genera el ID real mediante AUTO_INCREMENT.
+         */
         Pedido pedido =
                 new Pedido(
-                        id,
+                        0,
                         direccion,
                         tipo
                 );
 
-        /*
-         * Primero guardamos en MySQL.
-         * Si MySQL rechaza el registro,
-         * no lo agregamos a memoria.
-         */
         boolean guardadoBD =
                 pedidoDAO.guardar(pedido);
 
@@ -134,33 +106,30 @@ public class VentanaRegistroPedido extends JFrame {
 
             JOptionPane.showMessageDialog(
                     this,
-                    "No se pudo guardar el pedido.\n" +
-                            "Verifique que el ID no exista."
+                    "No se pudo guardar el pedido.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
             );
 
             return;
         }
 
-        boolean agregado =
-                pedidoController.agregarPedido(pedido);
+        /*
+         * Mantenemos el pedido también en el controlador
+         * porque todavía existe la lógica de cola heredada
+         * de las semanas anteriores.
+         */
+        pedidoController.agregarPedido(pedido);
 
-        if (!agregado) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Pedido registrado correctamente.",
+                "Registro exitoso",
+                JOptionPane.INFORMATION_MESSAGE
+        );
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "El pedido fue guardado en la base de datos."
-            );
-
-        } else {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Pedido registrado correctamente."
-            );
-        }
-
-        campoId.setText("");
         campoDireccion.setText("");
         comboTipo.setSelectedIndex(0);
+        campoDireccion.requestFocus();
     }
 }
