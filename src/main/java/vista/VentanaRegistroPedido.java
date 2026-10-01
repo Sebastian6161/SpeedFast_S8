@@ -1,6 +1,5 @@
 package vista;
 
-import controladores.PedidoController;
 import dao.PedidoDAO;
 import modelo.Pedido;
 
@@ -9,29 +8,21 @@ import java.awt.*;
 
 public class VentanaRegistroPedido extends JFrame {
 
-    private PedidoController pedidoController;
-    private PedidoDAO pedidoDAO;
+    private final PedidoDAO pedidoDAO;
 
     private JTextField campoDireccion;
     private JComboBox<String> comboTipo;
 
-    public VentanaRegistroPedido(
-            PedidoController pedidoController
-    ) {
+    public VentanaRegistroPedido() {
 
-        this.pedidoController = pedidoController;
         this.pedidoDAO = new PedidoDAO();
 
         setTitle("Registrar Pedido");
         setSize(450, 230);
-        setDefaultCloseOperation(
-                JFrame.DISPOSE_ON_CLOSE
-        );
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        setLayout(
-                new GridLayout(3, 2, 10, 10)
-        );
+        setLayout(new GridLayout(3, 2, 10, 10));
 
         // Dirección
         add(new JLabel("Dirección:"));
@@ -113,13 +104,6 @@ public class VentanaRegistroPedido extends JFrame {
 
             return;
         }
-
-        /*
-         * Mantenemos el pedido también en el controlador
-         * porque todavía existe la lógica de cola heredada
-         * de las semanas anteriores.
-         */
-        pedidoController.agregarPedido(pedido);
 
         JOptionPane.showMessageDialog(
                 this,

@@ -1,6 +1,5 @@
 package vista;
 
-import controladores.PedidoController;
 import dao.PedidoDAO;
 import modelo.EstadoPedido;
 import modelo.Pedido;
@@ -12,7 +11,6 @@ import java.util.List;
 
 public class VentanaListaPedidos extends JFrame {
 
-    private PedidoController pedidoController;
     private PedidoDAO pedidoDAO;
 
     private DefaultTableModel modeloTabla;
@@ -22,11 +20,8 @@ public class VentanaListaPedidos extends JFrame {
     private JComboBox<String> comboTipo;
     private JComboBox<EstadoPedido> comboEstado;
 
-    public VentanaListaPedidos(
-            PedidoController pedidoController
-    ) {
+    public VentanaListaPedidos() {
 
-        this.pedidoController = pedidoController;
         this.pedidoDAO = new PedidoDAO();
 
         setTitle("Gestión de Pedidos");

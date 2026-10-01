@@ -1,17 +1,11 @@
 package vista;
 
-import controladores.PedidoController;
-
 import javax.swing.*;
 import java.awt.*;
 
 public class VentanaPrincipal extends JFrame {
 
-    private PedidoController pedidoController;
-
-    public VentanaPrincipal(PedidoController pedidoController) {
-
-        this.pedidoController = pedidoController;
+    public VentanaPrincipal() {
 
         setTitle("SpeedFast - Sistema de Gestión");
         setSize(450, 450);
@@ -61,13 +55,13 @@ public class VentanaPrincipal extends JFrame {
 
         // Registrar pedido
         botonRegistrar.addActionListener(e ->
-                new VentanaRegistroPedido(pedidoController)
+                new VentanaRegistroPedido()
                         .setVisible(true)
         );
 
         // Gestionar pedidos
         botonPedidos.addActionListener(e ->
-                new VentanaListaPedidos(pedidoController)
+                new VentanaListaPedidos()
                         .setVisible(true)
         );
 
@@ -78,7 +72,7 @@ public class VentanaPrincipal extends JFrame {
 
         // Registrar entrega
         botonRegistrarEntrega.addActionListener(e ->
-                new VentanaAsignarEntrega(pedidoController)
+                new VentanaAsignarEntrega()
                         .setVisible(true)
         );
 

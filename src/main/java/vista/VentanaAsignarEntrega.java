@@ -23,9 +23,7 @@ public class VentanaAsignarEntrega extends JFrame {
     private final RepartidorDAO repartidorDAO;
     private final EntregaDAO entregaDAO;
 
-    public VentanaAsignarEntrega(
-            controladores.PedidoController pedidoController
-    ) {
+    public VentanaAsignarEntrega() {
 
         pedidoDAO = new PedidoDAO();
         repartidorDAO = new RepartidorDAO();
