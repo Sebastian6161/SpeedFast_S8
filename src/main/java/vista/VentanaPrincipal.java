@@ -13,7 +13,7 @@ public class VentanaPrincipal extends JFrame {
 
         this.pedidoController = pedidoController;
 
-        setTitle("SpeedFast - Gestión de Pedidos");
+        setTitle("SpeedFast - Sistema de Gestión");
         setSize(450, 450);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -21,11 +21,13 @@ public class VentanaPrincipal extends JFrame {
         setLayout(new BorderLayout(10, 10));
 
         JLabel titulo = new JLabel(
-                "SPEEDFAST - GESTIÓN DE PEDIDOS",
+                "SPEEDFAST - SISTEMA DE GESTIÓN",
                 SwingConstants.CENTER
         );
 
-        titulo.setFont(new Font("Arial", Font.BOLD, 18));
+        titulo.setFont(
+                new Font("Arial", Font.BOLD, 18)
+        );
 
         JPanel panelBotones = new JPanel();
 
@@ -36,23 +38,23 @@ public class VentanaPrincipal extends JFrame {
         JButton botonRegistrar =
                 new JButton("Registrar pedido");
 
-        JButton botonListar =
-                new JButton("Listar pedidos");
+        JButton botonPedidos =
+                new JButton("Gestionar pedidos");
 
         JButton botonRepartidores =
                 new JButton("Gestionar repartidores");
 
-        JButton botonEntrega =
-                new JButton("Asignar repartidor");
+        JButton botonRegistrarEntrega =
+                new JButton("Registrar entrega");
 
-        JButton botonProcesarCola =
-                new JButton("Procesar cola de entregas");
+        JButton botonGestionarEntregas =
+                new JButton("Gestionar entregas");
 
         panelBotones.add(botonRegistrar);
-        panelBotones.add(botonListar);
+        panelBotones.add(botonPedidos);
         panelBotones.add(botonRepartidores);
-        panelBotones.add(botonEntrega);
-        panelBotones.add(botonProcesarCola);
+        panelBotones.add(botonRegistrarEntrega);
+        panelBotones.add(botonGestionarEntregas);
 
         add(titulo, BorderLayout.NORTH);
         add(panelBotones, BorderLayout.CENTER);
@@ -63,8 +65,8 @@ public class VentanaPrincipal extends JFrame {
                         .setVisible(true)
         );
 
-        // Listar pedidos
-        botonListar.addActionListener(e ->
+        // Gestionar pedidos
+        botonPedidos.addActionListener(e ->
                 new VentanaListaPedidos(pedidoController)
                         .setVisible(true)
         );
@@ -74,31 +76,15 @@ public class VentanaPrincipal extends JFrame {
                 new VentanaRepartidores()
         );
 
-        // Asignar repartidor
-        botonEntrega.addActionListener(e ->
+        // Registrar entrega
+        botonRegistrarEntrega.addActionListener(e ->
                 new VentanaAsignarEntrega(pedidoController)
                         .setVisible(true)
         );
 
-        // Procesar cola
-        botonProcesarCola.addActionListener(e -> {
-
-            if (pedidoController.obtenerColaPedidos().isEmpty()) {
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "No hay pedidos pendientes en la cola para procesar."
-                );
-
-            } else {
-
-                pedidoController.procesarCola();
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Se han procesado todas las entregas en la cola."
-                );
-            }
-        });
+        // Gestionar entregas
+        botonGestionarEntregas.addActionListener(e ->
+                new VentanaEntregas()
+        );
     }
 }

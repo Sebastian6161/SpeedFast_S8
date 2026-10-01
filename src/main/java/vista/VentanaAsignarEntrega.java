@@ -1,40 +1,57 @@
 package vista;
 
-import controladores.PedidoController;
+import dao.EntregaDAO;
+import dao.PedidoDAO;
+import dao.RepartidorDAO;
+import modelo.Entrega;
+import modelo.EstadoPedido;
 import modelo.Pedido;
 import modelo.Repartidor;
 
 import javax.swing.*;
 import java.awt.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 public class VentanaAsignarEntrega extends JFrame {
 
-    private PedidoController pedidoController;
     private JComboBox<Pedido> comboPedidos;
     private JComboBox<Repartidor> comboRepartidores;
 
-    public VentanaAsignarEntrega(PedidoController pedidoController) {
+    private final PedidoDAO pedidoDAO;
+    private final RepartidorDAO repartidorDAO;
+    private final EntregaDAO entregaDAO;
 
-        this.pedidoController = pedidoController;
+    public VentanaAsignarEntrega(
+            controladores.PedidoController pedidoController
+    ) {
 
-        setTitle("Asignar Repartidor");
-        setSize(450, 250);
+        pedidoDAO = new PedidoDAO();
+        repartidorDAO = new RepartidorDAO();
+        entregaDAO = new EntregaDAO();
+
+        setTitle("Registrar Entrega");
+        setSize(550, 300);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        setLayout(new GridLayout(3, 2, 10, 10));
+        setLayout(new GridLayout(4, 2, 10, 10));
 
-        JLabel etiquetaPedido = new JLabel("Seleccione el pedido:");
-        JLabel etiquetaRepartidor = new JLabel("Seleccione el repartidor:");
+        JLabel etiquetaPedido =
+                new JLabel("Seleccione el pedido:");
+
+        JLabel etiquetaRepartidor =
+                new JLabel("Seleccione el repartidor:");
 
         comboPedidos = new JComboBox<>();
         comboRepartidores = new JComboBox<>();
 
-        cargarPedidos();
-        cargarRepartidores();
+        JButton botonRefrescar =
+                new JButton("Refrescar datos");
 
-        JButton botonAsignar = new JButton("Asignar Repartidor");
+        JButton botonRegistrar =
+                new JButton("Registrar Entrega");
 
         add(etiquetaPedido);
         add(comboPedidos);
@@ -42,35 +59,47 @@ public class VentanaAsignarEntrega extends JFrame {
         add(etiquetaRepartidor);
         add(comboRepartidores);
 
-        add(new JLabel());
-        add(botonAsignar);
+        add(new JLabel(""));
+        add(botonRefrescar);
 
-        botonAsignar.addActionListener(e -> iniciarEntrega());
+        add(new JLabel(""));
+        add(botonRegistrar);
+
+        cargarDatos();
+
+        botonRefrescar.addActionListener(
+                e -> cargarDatos()
+        );
+
+        botonRegistrar.addActionListener(
+                e -> registrarEntrega()
+        );
     }
 
-    private void cargarPedidos() {
+    private void cargarDatos() {
 
-        List<Pedido> pedidos = pedidoController.obtenerPedidos();
+        comboPedidos.removeAllItems();
+        comboRepartidores.removeAllItems();
+
+        List<Pedido> pedidos =
+                pedidoDAO.listarTodos();
 
         for (Pedido pedido : pedidos) {
 
-            if (pedido.getEstado().toString().equals("PENDIENTE")) {
+            if (pedido.getEstado() == EstadoPedido.PENDIENTE) {
                 comboPedidos.addItem(pedido);
             }
         }
-    }
-
-    private void cargarRepartidores() {
 
         List<Repartidor> repartidores =
-                pedidoController.obtenerRepartidores();
+                repartidorDAO.listarTodos();
 
         for (Repartidor repartidor : repartidores) {
             comboRepartidores.addItem(repartidor);
         }
     }
 
-    private void iniciarEntrega() {
+    private void registrarEntrega() {
 
         Pedido pedidoSeleccionado =
                 (Pedido) comboPedidos.getSelectedItem();
@@ -79,30 +108,87 @@ public class VentanaAsignarEntrega extends JFrame {
                 (Repartidor) comboRepartidores.getSelectedItem();
 
         if (pedidoSeleccionado == null) {
+
             JOptionPane.showMessageDialog(
                     this,
-                    "No hay pedidos pendientes."
+                    "No hay pedidos pendientes disponibles.",
+                    "Validación",
+                    JOptionPane.WARNING_MESSAGE
             );
+
             return;
         }
 
-        pedidoSeleccionado.asignarRepartidor(repartidorSeleccionado);
+        if (repartidorSeleccionado == null) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "No hay repartidores disponibles.",
+                    "Validación",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            return;
+        }
+
+        Entrega entrega = new Entrega(
+                0,
+                pedidoSeleccionado,
+                repartidorSeleccionado,
+                LocalDate.now(),
+                LocalTime.now()
+        );
+
+        boolean guardada =
+                entregaDAO.guardar(entrega);
+
+        if (!guardada) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "No fue posible registrar la entrega.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+
+            return;
+        }
+
+        pedidoSeleccionado.setEstado(
+                EstadoPedido.EN_REPARTO
+        );
+
+        boolean estadoActualizado =
+                pedidoDAO.actualizarEstado(
+                        pedidoSeleccionado
+                );
+
+        if (!estadoActualizado) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "La entrega fue registrada, pero no se pudo actualizar el estado del pedido.",
+                    "Advertencia",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            cargarDatos();
+            return;
+        }
 
         JOptionPane.showMessageDialog(
                 this,
-                "Repartidor asignado correctamente.\n\n"
+                "Entrega registrada correctamente.\n\n"
                         + "Pedido: #" + pedidoSeleccionado.getId()
-                        + "\n"
-                        + "Dirección: "
+                        + "\nDirección: "
                         + pedidoSeleccionado.getDireccion()
-                        + "\n"
-                        + "Repartidor: "
+                        + "\nRepartidor: "
                         + repartidorSeleccionado.getNombre()
-                        + "\n"
-                        + "Estado: EN REPARTO\n\n"
-                        + "(Procese la cola desde el menú principal para finalizar a ENTREGADO)"
+                        + "\nEstado: EN_REPARTO",
+                "Registro exitoso",
+                JOptionPane.INFORMATION_MESSAGE
         );
 
-        dispose();
+        cargarDatos();
     }
 }
