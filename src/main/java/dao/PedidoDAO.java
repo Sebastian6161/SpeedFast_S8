@@ -2,7 +2,6 @@ package dao;
 
 import modelo.EstadoPedido;
 import modelo.Pedido;
-import modelo.Repartidor;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,220 +12,117 @@ import java.util.List;
 
 public class PedidoDAO {
 
+    // CREATE
     public boolean guardar(Pedido pedido) {
 
-        String sql =
-                "INSERT INTO pedido (id, direccion, tipo, estado) " +
-                        "VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO pedidos (direccion, tipo, estado) VALUES (?, ?, ?)";
 
-        Connection conexion = null;
-        PreparedStatement statement = null;
+        try (Connection conexion = ConexionBD.conectar();
+             PreparedStatement ps = conexion.prepareStatement(sql)) {
 
-        try {
+            ps.setString(1, pedido.getDireccion());
+            ps.setString(2, pedido.getTipo().toUpperCase());
+            ps.setString(3, pedido.getEstado().name());
 
-            conexion = ConexionBD.conectar();
-            statement = conexion.prepareStatement(sql);
-
-            statement.setInt(1, pedido.getId());
-            statement.setString(2, pedido.getDireccion());
-            statement.setString(3, pedido.getTipo());
-            statement.setString(4, pedido.getEstado().name());
-
-            statement.executeUpdate();
-
-            return true;
+            return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
-
-            System.out.println("Error al guardar el pedido.");
-            System.out.println(e.getMessage());
-
+            System.out.println("Error al guardar pedido: " + e.getMessage());
             return false;
-
-        } finally {
-
-            try {
-
-                if (statement != null) {
-                    statement.close();
-                }
-
-                if (conexion != null) {
-                    conexion.close();
-                }
-
-            } catch (SQLException e) {
-                System.out.println("Error al cerrar los recursos.");
-                System.out.println(e.getMessage());
-            }
         }
     }
 
-    public boolean actualizarEstado(Pedido pedido) {
-
-        String sql =
-                "UPDATE pedido SET estado = ? WHERE id = ?";
-
-        Connection conexion = null;
-        PreparedStatement statement = null;
-
-        try {
-
-            conexion = ConexionBD.conectar();
-            statement = conexion.prepareStatement(sql);
-
-            statement.setString(
-                    1,
-                    pedido.getEstado().name()
-            );
-
-            statement.setInt(
-                    2,
-                    pedido.getId()
-            );
-
-            int filasActualizadas =
-                    statement.executeUpdate();
-
-            return filasActualizadas > 0;
-
-        } catch (SQLException e) {
-
-            System.out.println(
-                    "Error al actualizar el estado del pedido."
-            );
-
-            System.out.println(e.getMessage());
-
-            return false;
-
-        } finally {
-
-            try {
-
-                if (statement != null) {
-                    statement.close();
-                }
-
-                if (conexion != null) {
-                    conexion.close();
-                }
-
-            } catch (SQLException e) {
-
-                System.out.println(
-                        "Error al cerrar los recursos."
-                );
-
-                System.out.println(e.getMessage());
-            }
-        }
-    }
-
+    // READ
     public List<Pedido> listarTodos() {
 
         List<Pedido> pedidos = new ArrayList<>();
 
-        String sql =
-                "SELECT p.id, p.direccion, p.tipo, p.estado, " +
-                        "r.id AS repartidor_id, " +
-                        "r.nombre AS repartidor_nombre " +
-                        "FROM pedido p " +
-                        "LEFT JOIN entrega e ON p.id = e.id_pedido " +
-                        "LEFT JOIN repartidor r ON e.id_repartidor = r.id " +
-                        "ORDER BY p.id";
+        String sql = "SELECT id, direccion, tipo, estado FROM pedidos";
 
-        Connection conexion = null;
-        PreparedStatement statement = null;
-        ResultSet resultado = null;
+        try (Connection conexion = ConexionBD.conectar();
+             PreparedStatement ps = conexion.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-        try {
+            while (rs.next()) {
 
-            conexion = ConexionBD.conectar();
-            statement = conexion.prepareStatement(sql);
-            resultado = statement.executeQuery();
+                Pedido pedido = new Pedido(
+                        rs.getInt("id"),
+                        rs.getString("direccion"),
+                        rs.getString("tipo")
+                );
 
-            while (resultado.next()) {
-
-                int id =
-                        resultado.getInt("id");
-
-                String direccion =
-                        resultado.getString("direccion");
-
-                String tipo =
-                        resultado.getString("tipo");
-
-                String estadoTexto =
-                        resultado.getString("estado");
-
-                Pedido pedido =
-                        new Pedido(id, direccion, tipo);
-
-                EstadoPedido estado =
-                        EstadoPedido.valueOf(estadoTexto);
-
-                pedido.setEstado(estado);
-
-                int repartidorId =
-                        resultado.getInt("repartidor_id");
-
-                String repartidorNombre =
-                        resultado.getString(
-                                "repartidor_nombre"
-                        );
-
-                if (repartidorNombre != null) {
-
-                    Repartidor repartidor =
-                            new Repartidor(
-                                    repartidorId,
-                                    repartidorNombre
-                            );
-
-                    pedido.asignarRepartidor(repartidor);
-
-                    // Conserva el estado real almacenado
-                    pedido.setEstado(estado);
-                }
+                pedido.setEstado(
+                        EstadoPedido.valueOf(rs.getString("estado"))
+                );
 
                 pedidos.add(pedido);
             }
 
         } catch (SQLException e) {
-
-            System.out.println(
-                    "Error al listar los pedidos."
-            );
-
-            System.out.println(e.getMessage());
-
-        } finally {
-
-            try {
-
-                if (resultado != null) {
-                    resultado.close();
-                }
-
-                if (statement != null) {
-                    statement.close();
-                }
-
-                if (conexion != null) {
-                    conexion.close();
-                }
-
-            } catch (SQLException e) {
-
-                System.out.println(
-                        "Error al cerrar los recursos."
-                );
-
-                System.out.println(e.getMessage());
-            }
+            System.out.println("Error al listar pedidos: " + e.getMessage());
         }
 
         return pedidos;
+    }
+
+    // UPDATE
+    public boolean actualizar(Pedido pedido) {
+
+        String sql =
+                "UPDATE pedidos SET direccion = ?, tipo = ?, estado = ? WHERE id = ?";
+
+        try (Connection conexion = ConexionBD.conectar();
+             PreparedStatement ps = conexion.prepareStatement(sql)) {
+
+            ps.setString(1, pedido.getDireccion());
+            ps.setString(2, pedido.getTipo().toUpperCase());
+            ps.setString(3, pedido.getEstado().name());
+            ps.setInt(4, pedido.getId());
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.out.println("Error al actualizar pedido: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // DELETE
+    public boolean eliminar(int id) {
+
+        String sql = "DELETE FROM pedidos WHERE id = ?";
+
+        try (Connection conexion = ConexionBD.conectar();
+             PreparedStatement ps = conexion.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.out.println("Error al eliminar pedido: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // ACTUALIZAR SOLO EL ESTADO
+    public boolean actualizarEstado(Pedido pedido) {
+
+        String sql = "UPDATE pedidos SET estado = ? WHERE id = ?";
+
+        try (Connection conexion = ConexionBD.conectar();
+             PreparedStatement ps = conexion.prepareStatement(sql)) {
+
+            ps.setString(1, pedido.getEstado().name());
+            ps.setInt(2, pedido.getId());
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.out.println(
+                    "Error al actualizar estado del pedido: " + e.getMessage()
+            );
+            return false;
+        }
     }
 }

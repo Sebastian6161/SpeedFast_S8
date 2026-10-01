@@ -17,10 +17,7 @@ public class Pedido {
         this.id = id;
         this.direccion = direccion;
         this.tipo = tipo;
-
-        this.estado =
-                EstadoPedido.PENDIENTE;
-
+        this.estado = EstadoPedido.PENDIENTE;
         this.repartidor = null;
     }
 
@@ -44,6 +41,14 @@ public class Pedido {
         return repartidor;
     }
 
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
     public void setEstado(
             EstadoPedido estado
     ) {
@@ -55,21 +60,15 @@ public class Pedido {
     ) {
 
         this.repartidor = repartidor;
-
-        this.estado =
-                EstadoPedido.EN_REPARTO;
+        this.estado = EstadoPedido.EN_REPARTO;
     }
 
     public void entregar() {
-
-        this.estado =
-                EstadoPedido.ENTREGADO;
+        this.estado = EstadoPedido.ENTREGADO;
     }
 
     public void interrumpir() {
-
-        this.estado =
-                EstadoPedido.INTERRUMPIDO;
+        this.estado = EstadoPedido.INTERRUMPIDO;
     }
 
     @Override
